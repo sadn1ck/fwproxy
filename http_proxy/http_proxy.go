@@ -4,10 +4,18 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var HOP_BY_HOP_HEADERS = []string{
 	"Keep-Alive", "Transfer-Encoding", "TE", "Connection", "Trailer", "Upgrade", "Proxy-Authorization", "Proxy-Authenticate",
+}
+
+func generateUnauthorizedResponse() *http.Response {
+	return &http.Response{
+		StatusCode: http.StatusUnauthorized,
+		Body:       io.NopCloser(strings.NewReader("Unauthorized")),
+	}
 }
 
 func removeHopByHopHeaders(header http.Header) http.Header {
@@ -33,6 +41,7 @@ func proxyRequest(r *http.Request) (*http.Response, error) {
 		return nil, err
 	}
 
+	log.Println("URL: "+r.URL.String(), "Status: "+res.Status, "Method: "+r.Method, "Remote: "+r.RemoteAddr)
 	return res, nil
 }
 
@@ -49,18 +58,22 @@ func cloneProxyResponseIntoWriter(res *http.Response, w http.ResponseWriter) {
 	io.Copy(w, res.Body)
 }
 
-func Start() {
+func Start(banned map[string]bool) {
+	log.Println("Ready to serve requests")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		res, err := proxyRequest(r)
-
-		if err != nil {
-			log.Printf("Error: %s", err)
-			w.Write([]byte(err.Error()))
-			return
+		// TODO: rewrite properly, wtf is this
+		if banned[r.Host] {
+			res := generateUnauthorizedResponse()
+			cloneProxyResponseIntoWriter(res, w)
+		} else {
+			res, err := proxyRequest(r)
+			if err != nil {
+				log.Printf("Error: %s", err)
+				w.Write([]byte(err.Error()))
+				return
+			}
+			cloneProxyResponseIntoWriter(res, w)
 		}
-
-		cloneProxyResponseIntoWriter(res, w)
-
 	})
 	http.ListenAndServe(":4041", nil)
 }

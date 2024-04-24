@@ -11,10 +11,12 @@ This is a simple forward proxy written in golang. It can take a request and forw
 ### Goals
 
 - [x] Make sure response is proper before returning to client
-- [ ] Add a website & keyword banlist
-    - [ ] Web UI to manage banlists
-- [ ] Handle HTTPS (need learnings)
+- [ ] Web UI to manage banlists
+  - [ ] Connect to DB to manage list as well
+- [x] Add a website banlist
+- [ ] Add a keyword banlist in response?
 - [ ] Make configurable and deployable (binary output)
+- [ ] Handle HTTPS (need learnings)
 - [ ] Add logging (hehe bye privacy)
 
 ### More
